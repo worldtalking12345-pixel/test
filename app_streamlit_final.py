@@ -317,9 +317,6 @@ def extract(word, rule=2):
 
     seq, _ = apply_step1(word)
 
-    # ② えい→え、おう→お
-    seq = compress_ei_ou(seq)
-
     # ③ 3連続母音圧縮
     seq, stop = remove_duplicates_with_last_rollback(seq)
     if stop:
@@ -365,9 +362,14 @@ def extract_vowel_search(word):
 
     word = kanafy(word)
 
-    word = apply_step0(word)
+    seq = []
 
-    seq, _ = apply_step1(word)
+    for ch in word:
+
+        if ch in VOWEL_MAP:
+            seq.append(VOWEL_MAP[ch])
+        else:
+            seq.append(ch)
 
     vowels = remove_non_vowels(seq)
 
@@ -525,10 +527,9 @@ def show_test():
 # GUI
 # ===========================
 
-
-
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 st.set_page_config(page_title="母音検索システム", layout="wide")
 
@@ -572,11 +573,29 @@ if query:
     st.write("一致件数:", len(results))
 
     if results:
-        st.dataframe(
-            pd.DataFrame({"単語": results}),
-            use_container_width=True,
-            hide_index=True
+
+        result_text = "\n".join(results)
+
+        st.text_area(
+            "検索結果",
+            result_text,
+            height=400,
+            key="result_text"
         )
+
+        components.html(
+            f"""
+            <button onclick="
+                navigator.clipboard.writeText(
+                    document.querySelector('textarea').value
+                )
+            ">
+                検索結果をコピー
+            </button>
+            """,
+            height=45,
+        )
+
     else:
         st.info("一致する単語はありません。")
 
