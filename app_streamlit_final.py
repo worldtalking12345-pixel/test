@@ -366,8 +366,8 @@ def extract_vowel_search(word):
 
     for ch in word:
 
-        if ch in VOWEL_MAP:
-            seq.append(VOWEL_MAP[ch])
+        if ch in vowel_map:
+            seq.append(vowel_map[ch])
         else:
             seq.append(ch)
 
