@@ -355,6 +355,25 @@ def extract(word, rule=2):
 
     return "".join(vowels)
 
+
+# ===========================
+# 母音検索用
+# ③→④→⑥のみ
+# ===========================
+
+def extract_vowel_search(word):
+
+    word = kanafy(word)
+
+    word = apply_step0(word)
+
+    seq, _ = apply_step1(word)
+
+    vowels = remove_non_vowels(seq)
+
+    return "".join(vowels)
+
+
 # ===========================
 # words.txt
 # ===========================
@@ -524,6 +543,11 @@ rule_label = st.radio(
     index=1
 )
 rule = rule_names[rule_label]
+search_mode = st.radio(
+    "検索方法",
+    ["単語で検索", "母音で検索"],
+    horizontal=True,
+)
 
 @st.cache_data
 def load_dictionary(rule):
@@ -536,10 +560,15 @@ st.caption(f"登録単語数: {count:,}")
 query = st.text_input("検索語")
 
 if query:
-    key = extract(query, rule)
+
+    if search_mode == "単語で検索":
+        key = extract(query, rule)
+    else:
+        key = extract_vowel_search(query)
+
     results = vowel_dict.get(key, [])
 
-    st.write("母音キー:", key)
+    st.write("検索キー:", key)
     st.write("一致件数:", len(results))
 
     if results:
@@ -555,4 +584,5 @@ with st.expander("変換テスト"):
     t = st.text_input("テスト文字列", key="test")
     if t:
         st.write("かな:", kanafy(t))
-        st.write("抽出:", extract(t, rule))
+        st.write("単語検索キー:", extract(t, rule))
+        st.write("母音検索キー:", extract_vowel_search(t))
