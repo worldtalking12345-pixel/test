@@ -576,24 +576,9 @@ if query:
 
         result_text = "\n".join(results)
 
-        st.text_area(
-            "検索結果",
+        st.code(
             result_text,
-            height=400,
-            key="result_text"
-        )
-
-        components.html(
-            f"""
-            <button onclick="
-                navigator.clipboard.writeText(
-                    document.querySelector('textarea').value
-                )
-            ">
-                検索結果をコピー
-            </button>
-            """,
-            height=45,
+            language=None
         )
 
     else:
