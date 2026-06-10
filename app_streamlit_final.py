@@ -318,7 +318,7 @@ def extract_from_reading(reading, rule=2):
 
     word = apply_step0(reading)
 
-    seq, _ = apply_step1(word)
+    seq = apply_step1(word)
 
     seq, stop = remove_duplicates_with_last_rollback(seq)
     if stop:
@@ -363,7 +363,7 @@ def extract_vowel_search(word):
 
     word = preprocess_word(word)
 
-    seq, _ = apply_step1(word)
+    seq = apply_step1(word)
 
     vowels = remove_non_vowels(seq)
 
