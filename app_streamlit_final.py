@@ -356,7 +356,11 @@ def compress_duplicate_vowels(seq):
         if not changed:
             return seq, False
 
-def extract_from_reading(reading, rule=2):
+def extract_from_reading(
+    reading,
+    rule=2,
+    use_step12=True
+):
 
     word = apply_step0(reading)
 
@@ -431,11 +435,7 @@ def extract(
 # ④→⑥のみ
 # ===========================
 
-def extract_from_reading(
-    reading,
-    rule=2,
-    use_step12=True
-):
+def extract_vowel_search(word):
 
     word = preprocess_word(word)
 
@@ -525,10 +525,15 @@ rule_label = st.radio(
     index=1
 )
 
-use_step12 = st.checkbox(
-    "⑫を適用する",
-    value=True
-)
+rule = rule_names[rule_label]
+
+if rule == 0:
+    use_step12 = False
+else:
+    use_step12 = st.checkbox(
+        "⑫を適用する",
+        value=True
+    )
 
 rule = rule_names[rule_label]
 search_mode = st.radio(
@@ -590,5 +595,12 @@ with st.expander("変換テスト"):
     t = st.text_input("テスト文字列", key="test")
     if t:
         st.write("かな:", kanafy(t))
-        st.write("単語検索キー:", extract(t, rule))
+        st.write(
+            "単語検索キー:",
+            extract(
+                t,
+                rule,
+                use_step12
+            )
+        )
         st.write("母音検索キー:", extract_vowel_search(t))
