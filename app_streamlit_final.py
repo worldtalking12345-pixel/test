@@ -316,6 +316,8 @@ def preprocess_word(word):
 
 def compress_duplicate_vowels(seq):
 
+    print(seq)
+    
     while True:
 
         changed = False
