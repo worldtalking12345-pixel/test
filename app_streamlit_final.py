@@ -316,38 +316,50 @@ def preprocess_word(word):
 
 def compress_duplicate_vowels(seq):
 
-    i = 0
+    while True:
 
-    while i < len(seq) - 1:
+        changed = False
 
-        if seq[i] == seq[i + 1]:
+        i = 0
 
-            j = i + 1
+        while i < len(seq) - 1:
 
-            while (
-                j < len(seq)
-                and seq[j] == seq[i]
-            ):
-                j += 1
+            if seq[i] == seq[i + 1]:
 
-            run_length = j - i
+                j = i + 1
 
-            keep = 1 if run_length == 2 else 2
+                while (
+                    j < len(seq)
+                    and seq[j] == seq[i]
+                ):
+                    j += 1
 
-            candidate = (
-                seq[:i]
-                + [seq[i]] * keep
-                + seq[j:]
-            )
+                run_length = j - i
 
-            if len(candidate) < 4:
-                return seq, True
+                # 2連続なら1文字残す
+                # 3連続以上なら2文字残す
+                keep = 1 if run_length == 2 else 2
 
-            return candidate, False
+                current_len = run_length
 
-        i += 1
+                if current_len > keep:
 
-    return seq, False
+                    candidate = (
+                        seq[:j-1]
+                        + seq[j:]
+                    )
+
+                    if len(candidate) < 4:
+                        return seq, True
+
+                    seq = candidate
+                    changed = True
+                    break
+
+            i += 1
+
+        if not changed:
+            return seq, False
 
 def extract_from_reading(
     reading,
