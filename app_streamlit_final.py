@@ -1,10 +1,10 @@
 import os
 import re
 
-from fugashi import tagger
+from fugashi import Tagger
 from kanjize import number2kanji
 
-tagger = tagger()
+Tagger = Tagger()
 
 def cv_num(text):
 
@@ -43,7 +43,7 @@ def knf(text):
 
     result = []
 
-    for word in tagger(text):
+    for word in Tagger(text):
 
         kn = None
 
