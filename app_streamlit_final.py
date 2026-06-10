@@ -16,6 +16,23 @@ def convert_numbers(text):
 
     return re.sub(r"\d+", repl, text)
 
+ALPHABET_MAP = {
+    "A":"エー","B":"ビー","C":"シー","D":"ディー","E":"イー",
+    "F":"エフ","G":"ジー","H":"エイチ","I":"アイ","J":"ジェー",
+    "K":"ケー","L":"エル","M":"エム","N":"エヌ","O":"オー",
+    "P":"ピー","Q":"キュー","R":"アール","S":"エス","T":"ティー",
+    "U":"ユー","V":"ブイ","W":"ダブリュー","X":"エックス",
+    "Y":"ワイ","Z":"ゼット",
+    "a":"エー","b":"ビー","c":"シー","d":"ディー","e":"イー",
+    "f":"エフ","g":"ジー","h":"エイチ","i":"アイ","j":"ジェー",
+    "k":"ケー","l":"エル","m":"エム","n":"エヌ","o":"オー",
+    "p":"ピー","q":"キュー","r":"アール","s":"エス","t":"ティー",
+    "u":"ユー","v":"ブイ","w":"ダブリュー","x":"エックス",
+    "y":"ワイ","z":"ゼット",
+}
+
+def replace_alphabet(text):
+    return "".join(ALPHABET_MAP.get(ch, ch) for ch in text)
 
 def kanafy(text):
 
@@ -309,49 +326,52 @@ def compress_pair_repeat(vowels):
 # 母音抽出（新仕様）
 # ===========================
 
-def extract(word, rule=2):
+def preprocess_word(word):
 
-    word = kanafy(word)
+    word = replace_alphabet(word)
+    reading = kanafy(word)
 
-    word = apply_step0(word)
+    return reading
+
+def extract_from_reading(reading, rule=2):
+
+    word = apply_step0(reading)
 
     seq, _ = apply_step1(word)
 
-    # ③ 3連続母音圧縮
     seq, stop = remove_duplicates_with_last_rollback(seq)
     if stop:
         return "".join(remove_non_vowels(seq))
 
-    # ④ 母音以外削除
     vowels = remove_non_vowels(seq)
 
-    # ⑤ 連続母音圧縮
     vowels, stop = remove_duplicates_with_last_rollback(vowels)
     if stop:
         return "".join(vowels)
 
-    # ⑥
     if rule >= 2:
         vowels, stop = remove_middle_vowel_from_left(vowels, "う")
         if stop:
             return "".join(vowels)
 
-    # ⑦
     if rule >= 3:
         vowels, stop = remove_middle_vowel_from_left(vowels, "い")
         if stop:
             return "".join(vowels)
 
-    # ⑧
     vowels, stop = remove_duplicates_with_last_rollback(vowels)
     if stop:
         return "".join(vowels)
 
-    # ⑨
     vowels, stop = compress_pair_repeat(vowels)
 
     return "".join(vowels)
 
+def extract(word, rule=2):
+
+    reading = preprocess_word(word)
+
+    return extract_from_reading(reading, rule)
 
 # ===========================
 # 母音検索用
@@ -360,7 +380,7 @@ def extract(word, rule=2):
 
 def extract_vowel_search(word):
 
-    word = kanafy(word)
+    word = preprocess_word(word)
 
     seq = []
 
@@ -411,14 +431,26 @@ def build_dict(rule):
 
             used.add(word)
 
-            vowel = extract(word, rule)
+            reading = preprocess_word(word)
+
+            reading_len = len(reading)
+
+            vowel = extract_from_reading(
+                reading,
+                rule
+            )
 
             if vowel not in new_dict:
                 new_dict[vowel] = []
 
-            new_dict[vowel].append(word)
+            new_dict[vowel].append(
+                (word, reading_len)
+            )
 
             new_count += 1
+
+    for key in new_dict:
+        new_dict[key].sort(key=lambda x: x[1])
 
     return new_dict, new_count
 
@@ -574,7 +606,9 @@ if query:
 
     if results:
 
-        result_text = "\n".join(results)
+        result_text = "\n".join(
+            word for word, _ in results
+        )
 
         st.code(
             result_text,
