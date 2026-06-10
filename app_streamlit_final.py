@@ -6,7 +6,7 @@ from kanjize import number2kanji
 
 tagger = Tagger()
 
-def cv_num(text):
+def convert_numbers(text):
 
     def repl(m):
         try:
@@ -16,7 +16,7 @@ def cv_num(text):
 
     return re.sub(r"\d+", repl, text)
 
-ALP_MP = {
+ALPHABET_MAP = {
     "A":"エー","B":"ビー","C":"シー","D":"ディー","E":"イー",
     "F":"エフ","G":"ジー","H":"エイチ","I":"アイ","J":"ジェー",
     "K":"ケー","L":"エル","M":"エム","N":"エヌ","O":"オー",
@@ -31,12 +31,12 @@ ALP_MP = {
     "y":"ワイ","z":"ゼット",
 }
 
-def replace_alp(text):
-    return "".join(ALP_MP.get(ch, ch) for ch in text)
+def replace_alphabet(text):
+    return "".join(ALPHABET_MAP.get(ch, ch) for ch in text)
 
-def kanaf(text):
+def kanafy(text):
 
-    text = cv_num(text)
+    text = convert_numbers(text)
 
     text = text.replace("&", "アンド")
     text = text.replace("＆", "アンド")
@@ -71,7 +71,7 @@ def kanaf(text):
 # お段+う、え段+い を短縮
 # ===========================
 
-def st0(word):
+def apply_step0(word):
 
     word = word.replace("ー", "")
     word = word.replace("っ", "")
@@ -117,7 +117,7 @@ def st0(word):
 # Step1 母音化
 # ===========================
 
-vw_mp = {
+vowel_map = {
     'あ':'あ','い':'い','う':'う','え':'え','お':'お',
 
     'か':'あ','き':'い','く':'う','け':'え','こ':'お',
@@ -166,7 +166,7 @@ vw_mp = {
     'パ':'あ','ピ':'い','プ':'う','ペ':'え','ポ':'お'
 }
 
-sm_mp = {
+small_map = {
     'ゃ':'あ',
     'ゅ':'う',
     'ょ':'お',
@@ -189,7 +189,7 @@ sm_mp = {
 }
 
 
-def st1(word):
+def apply_step1(word):
 
     vowels = []
 
@@ -197,12 +197,12 @@ def st1(word):
 
     while i < len(word):
 
-        if i + 1 < len(word) and word[i + 1] in sm_mp:
-            vowels.append(sm_mp[word[i + 1]])
+        if i + 1 < len(word) and word[i + 1] in small_map:
+            vowels.append(small_map[word[i + 1]])
             i += 2
 
         else:
-            vowels.append(vw_mp.get(word[i], ""))
+            vowels.append(vowel_map.get(word[i], ""))
             i += 1
 
     return vowels
@@ -219,11 +219,11 @@ def st1(word):
 # 新仕様用関数
 # ===========================
 
-def rem_dup_w_la_rb(seq):
+def remove_duplicates_with_last_rollback(seq):
 
     while True:
 
-        cgd = False
+        changed = False
 
         i = 0
 
@@ -231,41 +231,41 @@ def rem_dup_w_la_rb(seq):
 
             if seq[i] == seq[i + 1]:
 
-                cdd = seq[:i + 1] + seq[i + 2:]
+                candidate = seq[:i + 1] + seq[i + 2:]
 
-                if len(cdd) < 4:
+                if len(candidate) < 4:
                     return seq, True
 
-                seq = cdd
-                cgd = True
+                seq = candidate
+                changed = True
                 break
 
             i += 1
 
-        if not cgd:
+        if not changed:
             return seq, False
 
 
-def rem_no_vw(seq):
+def remove_non_vowels(seq):
     return [x for x in seq if x in ["あ","い","う","え","お"]]
 
 
-def rem_mid_vw(vowels, target):
+def remove_middle_vowel_from_left(vowels, target):
     while True:
-        rmd = False
+        removed = False
         for i in range(1, len(vowels)-1):
             if vowels[i] == target:
-                cdd = vowels[:i] + vowels[i+1:]
-                if len(cdd) < 4:
+                candidate = vowels[:i] + vowels[i+1:]
+                if len(candidate) < 4:
                     return vowels, True
-                vowels = cdd
-                rmd = True
+                vowels = candidate
+                removed = True
                 break
-        if not rmd:
+        if not removed:
             return vowels, False
 
 
-def cmp_p_rep(vowels):
+def compress_pair_repeat(vowels):
 
     i = 0
     while i < len(vowels) - 3:
@@ -274,26 +274,26 @@ def cmp_p_rep(vowels):
 
         for size in range(2, (len(vowels) - i)//2 + 1):
 
-            bl = vowels[i:i+size]
+            block = vowels[i:i+size]
             repeat = 1
 
-            while vowels[i+repeat*size:i+(repeat+1)*size] == bl:
+            while vowels[i+repeat*size:i+(repeat+1)*size] == block:
                 repeat += 1
 
             if repeat >= 2:
 
                 keep = 1 if repeat == 2 else 2
 
-                cdd = (
+                candidate = (
                     vowels[:i]
-                    + bl * keep
+                    + block * keep
                     + vowels[i + repeat*size:]
                 )
 
-                if len(cdd) < 4:
+                if len(candidate) < 4:
                     return vowels, True
 
-                vowels = cdd
+                vowels = candidate
                 found = True
                 break
 
@@ -307,18 +307,18 @@ def cmp_p_rep(vowels):
 # 母音抽出（新仕様）
 # ===========================
 
-def prpr_wd(word):
+def preprocess_word(word):
 
-    word = replace_alp(word)
-    red = kanaf(word)
+    word = replace_alphabet(word)
+    reading = kanafy(word)
 
-    return red
+    return reading
 
-def cmp_dup_vw(seq):
+def compress_duplicate_vowels(seq):
 
     while True:
 
-        cgd = False
+        changed = False
 
         i = 0
 
@@ -338,46 +338,46 @@ def cmp_dup_vw(seq):
 
                 keep = 1 if run_length == 2 else 2
 
-                cdd = (
+                candidate = (
                     seq[:i]
                     + [seq[i]] * keep
                     + seq[j:]
                 )
 
-                if len(cdd) < 4:
+                if len(candidate) < 4:
                     return seq, True
 
-                seq = cdd
-                cgd = True
+                seq = candidate
+                changed = True
                 break
 
             i += 1
 
-        if not cgd:
+        if not changed:
             return seq, False
 
-def ext_f_red(red, rl=2):
+def extract_from_reading(reading, rule=2):
 
-    word = st0(red)
+    word = apply_step0(reading)
 
-    seq = st1(word)
+    seq = apply_step1(word)
 
-    if rl == 0:
+    if rule == 0:
 
-        seq, stop = cmp_dup_vw(seq)
+        seq, stop = compress_duplicate_vowels(seq)
 
     else:
 
-        seq, stop = rem_dup_w_la_rb(seq)
+        seq, stop = remove_duplicates_with_last_rollback(seq)
     if stop:
-        return "".join(rem_no_vw(seq))
+        return "".join(remove_non_vowels(seq))
 
-    vowels = rem_no_vw(seq)
+    vowels = remove_non_vowels(seq)
 
-    if rl != 0:
+    if rule != 0:
 
         vowels, stop = (
-            rem_dup_w_la_rb(
+            remove_duplicates_with_last_rollback(
                 vowels
             )
         )
@@ -385,20 +385,20 @@ def ext_f_red(red, rl=2):
         if stop:
             return "".join(vowels)
 
-    if rl >= 2:
-        vowels, stop = rem_mid_vw(vowels, "う")
+    if rule >= 2:
+        vowels, stop = remove_middle_vowel_from_left(vowels, "う")
         if stop:
             return "".join(vowels)
 
-    if rl >= 3:
-        vowels, stop = rem_mid_vw(vowels, "い")
+    if rule >= 3:
+        vowels, stop = remove_middle_vowel_from_left(vowels, "い")
         if stop:
             return "".join(vowels)
 
-    if rl != 0:
+    if rule != 0:
 
         vowels, stop = (
-            rem_dup_w_la_rb(
+            remove_duplicates_with_last_rollback(
                 vowels
             )
         )
@@ -406,24 +406,24 @@ def ext_f_red(red, rl=2):
         if stop:
             return "".join(vowels)
 
-    if rl != 0 and us12:
+    if rule != 0 and use_step12:
 
-        vowels, stop = cmp_p_rep(vowels)
+        vowels, stop = compress_pair_repeat(vowels)
 
     return "".join(vowels)
 
-def ext(
+def extract(
     word,
-    rl=2,
-    us12=True
+    rule=2,
+    use_step12=True
 ):
 
-    red = prpr_wd(word)
+    reading = preprocess_word(word)
 
-    return ext_f_red(
-        red,
-        rl,
-        us12
+    return extract_from_reading(
+        reading,
+        rule,
+        use_step12
     )
 
 # ===========================
@@ -431,17 +431,17 @@ def ext(
 # ④→⑥のみ
 # ===========================
 
-def ext_f_red(
-    red,
-    rl=2,
-    us12=True
+def extract_from_reading(
+    reading,
+    rule=2,
+    use_step12=True
 ):
 
-    word = prpr_wd(word)
+    word = preprocess_word(word)
 
-    seq = st1(word)
+    seq = apply_step1(word)
 
-    vowels = rem_no_vw(seq)
+    vowels = remove_non_vowels(seq)
 
     return "".join(vowels)
 
@@ -450,16 +450,16 @@ def ext_f_red(
 # words.txt
 # ===========================
 
-fld = os.path.dirname(os.path.abspath(__file__))
-wd_fle = os.path.join(fld, "words.txt")
+folder = os.path.dirname(os.path.abspath(__file__))
+word_file = os.path.join(folder, "words.txt")
 
-def bud_dic(rl, us12):
+def build_dict(rule, use_step12):
 
     new_dict = {}
     used = set()
-    new_ct = 0
+    new_count = 0
 
-    with open(wd_fle, encoding="utf-8") as f:
+    with open(word_file, encoding="utf-8") as f:
 
         for line in f:
 
@@ -476,29 +476,29 @@ def bud_dic(rl, us12):
 
             used.add(word)
 
-            red = prpr_wd(word)
+            reading = preprocess_word(word)
 
-            red_len = len(red)
+            reading_len = len(reading)
 
-            vowel = ext_f_red(
-                red,
-                rl,
-                us12
+            vowel = extract_from_reading(
+                reading,
+                rule,
+                use_step12
             )
 
             if vowel not in new_dict:
                 new_dict[vowel] = []
 
             new_dict[vowel].append(
-                (word, red_len)
+                (word, reading_len)
             )
 
-            new_ct += 1
+            new_count += 1
 
     for key in new_dict:
         new_dict[key].sort(key=lambda x: x[1])
 
-    return new_dict, new_ct
+    return new_dict, new_count
 
 
 # ===========================
@@ -511,75 +511,75 @@ st.set_page_config(page_title="母音検索システム", layout="wide")
 
 st.title("母音検索システム")
 
-rl_nm = {
+rule_names = {
     "ばりかた": 0,
     "かため": 1,
     "ふつう": 2,
     "やわめ": 3,
 }
 
-rl_lb = st.radio(
+rule_label = st.radio(
     "変換ルール",
-    list(rl_nm.keys()),
+    list(rule_names.keys()),
     horizontal=True,
     index=1
 )
 
-us12 = st.checkbox(
+use_step12 = st.checkbox(
     "⑫を適用する",
     value=True
 )
 
-rl = rl_nm[rl_lb]
-sch_md = st.radio(
+rule = rule_names[rule_label]
+search_mode = st.radio(
     "検索方法",
     ["単語で検索", "母音で検索"],
     horizontal=True,
 )
 
 @st.cache_data
-def ld_dic(
-    rl,
-    us12
+def load_dictionary(
+    rule,
+    use_step12
 ):
-    return bud_dic(
-        rl,
-        us12
+    return build_dict(
+        rule,
+        use_step12
     )
 
-vw_dic, ct = ld_dic(
-    rl,
-    us12
+vowel_dict, count = load_dictionary(
+    rule,
+    use_step12
 )
 
-st.caption(f"登録単語数: {ct:,}")
+st.caption(f"登録単語数: {count:,}")
 
-qu = st.text_input("検索語")
+query = st.text_input("検索語")
 
-if qu:
+if query:
 
-    if sch_md == "単語で検索":
-        key = ext(
-            qu,
-            rl,
-            us12
+    if search_mode == "単語で検索":
+        key = extract(
+            query,
+            rule,
+            use_step12
         )
     else:
-        key = ext_vw_sch(qu)
+        key = extract_vowel_search(query)
 
-    res = vw_dic.get(key, [])
+    results = vowel_dict.get(key, [])
 
     st.write("検索キー:", key)
-    st.write("一致件数:", len(res))
+    st.write("一致件数:", len(results))
 
-    if res:
+    if results:
 
-        res_tx = "\n".join(
-            word for word, _ in res
+        result_text = "\n".join(
+            word for word, _ in results
         )
 
         st.code(
-            res_tx,
+            result_text,
             language=None
         )
 
@@ -589,6 +589,6 @@ if qu:
 with st.expander("変換テスト"):
     t = st.text_input("テスト文字列", key="test")
     if t:
-        st.write("かな:", kanaf(t))
-        st.write("単語検索キー:", ext(t, rl))
-        st.write("母音検索キー:", ext_vw_sch(t))
+        st.write("かな:", kanafy(t))
+        st.write("単語検索キー:", extract(t, rule))
+        st.write("母音検索キー:", extract_vowel_search(t))
