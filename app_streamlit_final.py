@@ -310,13 +310,13 @@ def cmp_p_rep(vowels):
 def prpr_wd(word):
 
     word = rep_alp(word)
-    red = knf(word)
+    reading = knf(word)
 
-    return red
+    return reading
 
-def ext_f_red(red, rl=2):
+def ext_f_reading(reading, rl=2):
 
-    word = st0(red)
+    word = st0(reading)
 
     seq = st1(word)
 
@@ -350,9 +350,9 @@ def ext_f_red(red, rl=2):
 
 def ext(word, rl=2):
 
-    red = prpr_wd(word)
+    reading = prpr_wd(word)
 
-    return ext_f_red(red, rl)
+    return ext_f_reading(reading, rl)
 
 # ===========================
 # 母音検索用
@@ -400,12 +400,12 @@ def bud_dic(rl):
 
             used.add(word)
 
-            red = prpr_wd(word)
+            reading = prpr_wd(word)
 
-            red_len = len(red)
+            reading_len = len(reading)
 
-            vowel = ext_f_red(
-                red,
+            vowel = ext_f_reading(
+                reading,
                 rl
             )
 
@@ -413,7 +413,7 @@ def bud_dic(rl):
                 new_dict[vowel] = []
 
             new_dict[vowel].append(
-                (word, red_len)
+                (word, reading_len)
             )
 
             new_ct += 1
