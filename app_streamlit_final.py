@@ -34,7 +34,7 @@ ALP_MP = {
 def rep_alp(text):
     return "".join(ALP_MP.get(ch, ch) for ch in text)
 
-def knf(text):
+def kanaf(text):
 
     text = cv_num(text)
 
@@ -45,21 +45,21 @@ def knf(text):
 
     for word in Tagger(text):
 
-        kn = None
+        kana = None
 
         try:
-            kn = word.feature.kn
+            kana = word.feature.kana
         except:
             pass
 
-        if not kn:
+        if not kana:
             try:
-                kn = word.feature.knBase
+                kana = word.feature.kanaBase
             except:
                 pass
 
-        if kn:
-            result.append(kn)
+        if kana:
+            result.append(kana)
         else:
             result.append(word.surface)
 
@@ -81,34 +81,34 @@ def st0(word):
     word = word.replace("ョウ", "ョ")
 
     # お段 + う
-    for kn in [
+    for kana in [
         'こ', 'そ', 'と', 'の', 'ほ', 'も',
         'よ', 'ろ', 'を', 'ご', 'ぼ', 'ぽ',
         'ど', 'お'
     ]:
-        word = word.replace(kn + "う", kn)
+        word = word.replace(kana + "う", kana)
 
-    for kn in [
+    for kana in [
         'コ', 'ソ', 'ト', 'ノ', 'ホ', 'モ',
         'ヨ', 'ロ', 'ヲ', 'ゴ', 'ボ', 'ポ',
         'ド', 'オ'
     ]:
-        word = word.replace(kn + "ウ", kn)
+        word = word.replace(kana + "ウ", kana)
 
     # え段 + い
-    for kn in [
+    for kana in [
         'え',
         'け', 'せ', 'て', 'ね', 'へ', 'め', 'れ',
         'げ', 'ぜ', 'で', 'べ', 'ぺ'
     ]:
-        word = word.replace(kn + "い", kn)
+        word = word.replace(kana + "い", kana)
 
-    for kn in [
+    for kana in [
         'エ',
         'ケ', 'セ', 'テ', 'ネ', 'ヘ', 'メ', 'レ',
         'ゲ', 'ゼ', 'デ', 'ベ', 'ペ'
     ]:
-        word = word.replace(kn + "イ", kn)
+        word = word.replace(kana + "イ", kana)
 
     return word
 
@@ -310,7 +310,7 @@ def cmp_p_rep(vowels):
 def prpr_wd(word):
 
     word = rep_alp(word)
-    red = knf(word)
+    red = kanaf(word)
 
     return red
 
@@ -488,6 +488,6 @@ if qu:
 with st.expander("変換テスト"):
     t = st.text_input("テスト文字列", key="test")
     if t:
-        st.write("かな:", knf(t))
+        st.write("かな:", kanaf(t))
         st.write("単語検索キー:", ext(t, rl))
         st.write("母音検索キー:", ext_vw_sch(t))
