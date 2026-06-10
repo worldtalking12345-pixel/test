@@ -316,50 +316,78 @@ def preprocess_word(word):
 
 def compress_duplicate_vowels(seq):
 
-    print(seq)
-    
+    # 連続区間解析
+    runs = []
+
+    i = 0
+
+    while i < len(seq):
+
+        j = i + 1
+
+        while (
+            j < len(seq)
+            and seq[j] == seq[i]
+        ):
+            j += 1
+
+        length = j - i
+
+        if length == 2:
+            target = 1
+        elif length >= 3:
+            target = 2
+        else:
+            target = 1
+
+        runs.append([
+            seq[i],
+            length,
+            target,
+        ])
+
+        i = j
+
+    # 先頭側から1文字ずつ削る
     while True:
 
         changed = False
 
-        i = 0
+        for run in runs:
 
-        while i < len(seq):
+            char, length, target = run
 
-            j = i + 1
+            if length > target:
 
-            while (
-                j < len(seq)
-                and seq[j] == seq[i]
-            ):
-                j += 1
-
-            run_length = j - i
-
-            target = (
-                1 if run_length == 2
-                else 2 if run_length >= 3
-                else run_length
-            )
-
-            if run_length > target:
-
-                candidate = (
-                    seq[:i]
-                    + seq[i+1:]
+                candidate_len = (
+                    sum(r[1] for r in runs)
+                    - 1
                 )
 
-                if len(candidate) < 4:
-                    return seq, True
+                if candidate_len < 4:
+                    return (
+                        list(
+                            "".join(
+                                c * l
+                                for c, l, _ in runs
+                            )
+                        ),
+                        True
+                    )
 
-                seq = candidate
+                run[1] -= 1
                 changed = True
                 break
 
-            i = j
-
         if not changed:
-            return seq, False
+            break
+
+    result = []
+
+    for char, length, _ in runs:
+        result.extend([char] * length)
+
+    return result, False
 
 def extract_from_reading(
     reading,
