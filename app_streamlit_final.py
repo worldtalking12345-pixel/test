@@ -316,45 +316,38 @@ def preprocess_word(word):
 
 def compress_duplicate_vowels(seq):
 
-    while True:
+    i = 0
 
-        changed = False
+    while i < len(seq) - 1:
 
-        i = 0
+        if seq[i] == seq[i + 1]:
 
-        while i < len(seq) - 1:
+            j = i + 1
 
-            if seq[i] == seq[i + 1]:
+            while (
+                j < len(seq)
+                and seq[j] == seq[i]
+            ):
+                j += 1
 
-                j = i + 1
+            run_length = j - i
 
-                while (
-                    j < len(seq)
-                    and seq[j] == seq[i]
-                ):
-                    j += 1
+            keep = 1 if run_length == 2 else 2
 
-                run_length = j - i
+            candidate = (
+                seq[:i]
+                + [seq[i]] * keep
+                + seq[j:]
+            )
 
-                keep = 1 if run_length == 2 else 2
+            if len(candidate) < 4:
+                return seq, True
 
-                candidate = (
-                    seq[:i]
-                    + [seq[i]] * keep
-                    + seq[j:]
-                )
+            return candidate, False
 
-                if len(candidate) < 4:
-                    return seq, True
+        i += 1
 
-                seq = candidate
-                changed = True
-                break
-
-            i += 1
-
-        if not changed:
-            return seq, False
+    return seq, False
 
 def extract_from_reading(
     reading,
