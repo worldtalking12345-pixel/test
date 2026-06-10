@@ -38,8 +38,8 @@ def knf(text):
 
     text = cv_num(text)
 
-    text = text.rplace("&", "アンド")
-    text = text.rplace("＆", "アンド")
+    text = text.replace("&", "アンド")
+    text = text.replace("＆", "アンド")
 
     result = []
 
@@ -73,12 +73,12 @@ def knf(text):
 
 def st0(word):
 
-    word = word.rplace("ー", "")
-    word = word.rplace("っ", "")
-    word = word.rplace("ッ", "")
+    word = word.replace("ー", "")
+    word = word.replace("っ", "")
+    word = word.replace("ッ", "")
 
-    word = word.rplace("ょう", "ょ")
-    word = word.rplace("ョウ", "ョ")
+    word = word.replace("ょう", "ょ")
+    word = word.replace("ョウ", "ョ")
 
     # お段 + う
     for kn in [
@@ -86,14 +86,14 @@ def st0(word):
         'よ', 'ろ', 'を', 'ご', 'ぼ', 'ぽ',
         'ど', 'お'
     ]:
-        word = word.rplace(kn + "う", kn)
+        word = word.replace(kn + "う", kn)
 
     for kn in [
         'コ', 'ソ', 'ト', 'ノ', 'ホ', 'モ',
         'ヨ', 'ロ', 'ヲ', 'ゴ', 'ボ', 'ポ',
         'ド', 'オ'
     ]:
-        word = word.rplace(kn + "ウ", kn)
+        word = word.replace(kn + "ウ", kn)
 
     # え段 + い
     for kn in [
@@ -101,14 +101,14 @@ def st0(word):
         'け', 'せ', 'て', 'ね', 'へ', 'め', 'れ',
         'げ', 'ぜ', 'で', 'べ', 'ぺ'
     ]:
-        word = word.rplace(kn + "い", kn)
+        word = word.replace(kn + "い", kn)
 
     for kn in [
         'エ',
         'ケ', 'セ', 'テ', 'ネ', 'ヘ', 'メ', 'レ',
         'ゲ', 'ゼ', 'デ', 'ベ', 'ペ'
     ]:
-        word = word.rplace(kn + "イ", kn)
+        word = word.replace(kn + "イ", kn)
 
     return word
 
@@ -310,13 +310,13 @@ def cmp_p_rep(vowels):
 def prpr_wd(word):
 
     word = rep_alp(word)
-    reading = knf(word)
+    red = knf(word)
 
-    return reading
+    return red
 
-def ext_f_reading(reading, rl=2):
+def ext_f_red(red, rl=2):
 
-    word = st0(reading)
+    word = st0(red)
 
     seq = st1(word)
 
@@ -350,9 +350,9 @@ def ext_f_reading(reading, rl=2):
 
 def ext(word, rl=2):
 
-    reading = prpr_wd(word)
+    red = prpr_wd(word)
 
-    return ext_f_reading(reading, rl)
+    return ext_f_red(red, rl)
 
 # ===========================
 # 母音検索用
@@ -400,12 +400,12 @@ def bud_dic(rl):
 
             used.add(word)
 
-            reading = prpr_wd(word)
+            red = prpr_wd(word)
 
-            reading_len = len(reading)
+            red_len = len(red)
 
-            vowel = ext_f_reading(
-                reading,
+            vowel = ext_f_red(
+                red,
                 rl
             )
 
@@ -413,7 +413,7 @@ def bud_dic(rl):
                 new_dict[vowel] = []
 
             new_dict[vowel].append(
-                (word, reading_len)
+                (word, red_len)
             )
 
             new_ct += 1
