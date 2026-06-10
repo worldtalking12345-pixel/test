@@ -418,8 +418,8 @@ def bud_dic(rl):
 
             new_ct += 1
 
-    for ke in new_dict:
-        new_dict[ke].sort(ke=lambda x: x[1])
+    for key in new_dict:
+        new_dict[key].sort(key=lambda x: x[1])
 
     return new_dict, new_ct
 
@@ -438,7 +438,7 @@ rl_nm = {"かため": 1, "ふつう": 2, "やわめ": 3}
 
 rl_lb = st.radio(
     "変換ルール",
-    list(rl_nm.kes()),
+    list(rl_nm.keys()),
     horizontal=True,
     index=1
 )
@@ -462,13 +462,13 @@ qu = st.text_input("検索語")
 if qu:
 
     if sch_md == "単語で検索":
-        ke = ext(qu, rl)
+        key = ext(qu, rl)
     else:
-        ke = ext_vw_sch(qu)
+        key = ext_vw_sch(qu)
 
-    res = vw_dic.get(ke, [])
+    res = vw_dic.get(key, [])
 
-    st.write("検索キー:", ke)
+    st.write("検索キー:", key)
     st.write("一致件数:", len(res))
 
     if res:
@@ -486,7 +486,7 @@ if qu:
         st.info("一致する単語はありません。")
 
 with st.expander("変換テスト"):
-    t = st.text_input("テスト文字列", ke="test")
+    t = st.text_input("テスト文字列", key="test")
     if t:
         st.write("かな:", knf(t))
         st.write("単語検索キー:", ext(t, rl))
