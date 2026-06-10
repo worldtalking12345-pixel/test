@@ -326,6 +326,7 @@ def compress_duplicate_vowels(seq):
 
             if seq[i] == seq[i + 1]:
 
+                # 同一母音の連続区間を取得
                 j = i + 1
 
                 while (
@@ -336,17 +337,18 @@ def compress_duplicate_vowels(seq):
 
                 run_length = j - i
 
-                # 2連続なら1文字残す
-                # 3連続以上なら2文字残す
-                keep = 1 if run_length == 2 else 2
+                # 2連続 → 1文字まで削る
+                # 3連続以上 → 2文字まで削る
+                target_length = (
+                    1 if run_length == 2 else 2
+                )
 
-                current_len = run_length
+                if run_length > target_length:
 
-                if current_len > keep:
-
+                    # 先頭側から1文字削除
                     candidate = (
-                        seq[:j-1]
-                        + seq[j:]
+                        seq[:i]
+                        + seq[i+1:]
                     )
 
                     if len(candidate) < 4:
