@@ -192,7 +192,6 @@ small_map = {
 def apply_step1(word):
 
     vowels = []
-    positions = []
 
     i = 0
 
@@ -200,15 +199,13 @@ def apply_step1(word):
 
         if i + 1 < len(word) and word[i + 1] in small_map:
             vowels.append(small_map[word[i + 1]])
-            positions.append(i + 1)
             i += 2
 
         else:
             vowels.append(vowel_map.get(word[i], ""))
-            positions.append(i)
             i += 1
 
-    return vowels, positions
+    return vowels
 
 
 # ===========================
@@ -221,22 +218,6 @@ def apply_step1(word):
 # ===========================
 # 新仕様用関数
 # ===========================
-
-def compress_ei_ou(seq):
-    result = []
-    i = 0
-    while i < len(seq):
-        if i + 1 < len(seq) and seq[i] == "え" and seq[i + 1] == "い":
-            result.append("え")
-            i += 2
-        elif i + 1 < len(seq) and seq[i] == "お" and seq[i + 1] == "う":
-            result.append("お")
-            i += 2
-        else:
-            result.append(seq[i])
-            i += 1
-    return result
-
 
 def remove_duplicates_with_last_rollback(seq):
 
@@ -375,21 +356,14 @@ def extract(word, rule=2):
 
 # ===========================
 # 母音検索用
-# ③→④→⑥のみ
+# ④→⑥のみ
 # ===========================
 
 def extract_vowel_search(word):
 
     word = preprocess_word(word)
 
-    seq = []
-
-    for ch in word:
-
-        if ch in vowel_map:
-            seq.append(vowel_map[ch])
-        else:
-            seq.append(ch)
+    seq, _ = apply_step1(word)
 
     vowels = remove_non_vowels(seq)
 
@@ -402,11 +376,6 @@ def extract_vowel_search(word):
 
 folder = os.path.dirname(os.path.abspath(__file__))
 word_file = os.path.join(folder, "words.txt")
-
-current_rule = None
-vowel_dict = {}
-count = 0
-
 
 def build_dict(rule):
 
@@ -455,113 +424,11 @@ def build_dict(rule):
     return new_dict, new_count
 
 
-def rule_name(rule):
-
-    if rule == 1:
-        return "かため"
-
-    if rule == 2:
-        return "ふつう"
-
-    if rule == 3:
-        return "やわめ"
-
-    return "不明"
-
-
-def rebuild_if_needed():
-
-    global current_rule
-    global vowel_dict
-    global count
-
-    rule = rule_var.get()
-
-    if current_rule == rule:
-        return
-
-    vowel_dict, count = build_dict(rule)
-    current_rule = rule
-
-    count_label.config(text=f"登録単語数 : {count}")
-    rule_label.config(text=f"現在のルール : {rule_name(rule)}")
-
-
-# ===========================
-# 検索
-# ===========================
-
-def search(event=None):
-
-    rebuild_if_needed()
-
-    key = entry.get().strip()
-
-    result_box.delete(0, tk.END)
-
-    if not key:
-        info_label.config(text="母音を入力してください")
-        return
-
-    if key in vowel_dict:
-
-        words = sorted(vowel_dict[key])
-
-        info_label.config(text=f"{len(words)}件ヒット")
-
-        for w in words:
-            result_box.insert(tk.END, w)
-
-    else:
-
-        info_label.config(text="0件ヒット")
-        result_box.insert(tk.END, "該当なし")
-
-
-def auto_search(event=None):
-    search()
-
-
-def change_rule():
-
-    rebuild_if_needed()
-    search()
-
-
-# ===========================
-# テスト表示
-# ===========================
-
-def show_test():
-
-    rebuild_if_needed()
-
-    samples = [
-        "横行闊歩",
-        "映画",
-        "オールドファッション",
-        "倍々ファイト",
-        "あうあうおう"
-    ]
-
-    result_box.delete(0, tk.END)
-
-    for word in samples:
-        result_box.insert(
-            tk.END,
-            f"{word} → {extract(word, rule_var.get())}"
-        )
-
-    info_label.config(text="変換テストを表示しました")
-
-
 # ===========================
 # GUI
 # ===========================
 
-import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 
 st.set_page_config(page_title="母音検索システム", layout="wide")
 
