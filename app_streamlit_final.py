@@ -322,51 +322,39 @@ def compress_duplicate_vowels(seq):
 
         i = 0
 
-        while i < len(seq) - 1:
+        while i < len(seq):
 
-            if seq[i] == seq[i + 1]:
+            j = i + 1
 
-                j = i + 1
+            while (
+                j < len(seq)
+                and seq[j] == seq[i]
+            ):
+                j += 1
 
-                while (
-                    j < len(seq)
-                    and seq[j] == seq[i]
-                ):
-                    j += 1
+            run_length = j - i
 
-                run_length = j - i
+            target = (
+                1 if run_length == 2
+                else 2 if run_length >= 3
+                else run_length
+            )
 
-                # 2連続だけ1文字にする
-                if run_length == 2:
+            if run_length > target:
 
-                    candidate = (
-                        seq[:i]
-                        + seq[i+1:]
-                    )
+                candidate = (
+                    seq[:i]
+                    + seq[i+1:]
+                )
 
-                    if len(candidate) < 4:
-                        return seq, True
+                if len(candidate) < 4:
+                    return seq, True
 
-                    seq = candidate
-                    changed = True
-                    break
+                seq = candidate
+                changed = True
+                break
 
-                # 3連続以上なら2文字になるまで削る
-                elif run_length > 3:
-
-                    candidate = (
-                        seq[:i]
-                        + seq[i+1:]
-                    )
-
-                    if len(candidate) < 4:
-                        return seq, True
-
-                    seq = candidate
-                    changed = True
-                    break
-
-            i += 1
+            i = j
 
         if not changed:
             return seq, False
