@@ -2275,6 +2275,9 @@ render_memory_game_section()
 
 with st.expander("未読漢字チェック"):
 
+    if "kanji_problems" not in st.session_state:
+        st.session_state.kanji_problems = []
+
     if st.button("チェック開始"):
 
         import re
@@ -2312,17 +2315,12 @@ with st.expander("未読漢字チェック"):
                         )
                     )
 
-        st.write(f"件数: {len(problems)}")
+        st.session_state.kanji_problems = problems
 
-        if problems:
+    problems = st.session_state.kanji_problems
 
-            st.code(
-                "\n".join(
-                    f"{w} → {r} [{k}]"
-                    for w, r, k in problems
-                )
-            )
-            
+    st.write(f"件数: {len(problems)}")
+
     if problems:
 
         text = "\n".join(
