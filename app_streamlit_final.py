@@ -2277,6 +2277,7 @@ with st.expander("未読漢字チェック"):
 
     if st.button("チェック開始"):
 
+        import os
         import re
 
         kanji_re = re.compile(
@@ -2285,7 +2286,15 @@ with st.expander("未読漢字チェック"):
 
         problems = []
 
-        # words.txt を直接読む
+        folder = os.path.dirname(
+            os.path.abspath(__file__)
+        )
+
+        word_file = os.path.join(
+            folder,
+            "words.txt"
+        )
+
         with open(word_file, encoding="utf-8") as f:
 
             for line in f:
