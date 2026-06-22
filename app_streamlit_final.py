@@ -2272,3 +2272,54 @@ with st.expander("変換テスト"):
 
 render_flashcard_section()
 render_memory_game_section()
+
+with st.expander("未読漢字チェック"):
+
+    if st.button("チェック開始"):
+
+        import re
+
+        kanji_re = re.compile(
+            r'[\u3400-\u4DBF\u4E00-\u9FFF]'
+        )
+
+        problems = []
+
+        with open(word_file, encoding="utf-8") as f:
+
+            for line in f:
+
+                word = line.strip()
+
+                if not word:
+                    continue
+
+                if word.startswith("#"):
+                    continue
+
+                reading = kanafy(word)
+
+                remain = "".join(
+                    kanji_re.findall(reading)
+                )
+
+                if remain:
+
+                    problems.append(
+                        (
+                            word,
+                            reading,
+                            remain
+                        )
+                    )
+
+        st.write(f"件数: {len(problems)}")
+
+        if problems:
+
+            text = "\n".join(
+                f"{w} → {r} [{k}]"
+                for w, r, k in problems
+            )
+
+            st.code(text)
