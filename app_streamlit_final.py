@@ -2277,7 +2277,6 @@ with st.expander("未読漢字チェック"):
 
     if st.button("チェック開始"):
 
-        import os
         import re
 
         kanji_re = re.compile(
@@ -2286,28 +2285,18 @@ with st.expander("未読漢字チェック"):
 
         problems = []
 
-        folder = os.path.dirname(
-            os.path.abspath(__file__)
-        )
+        checked = set()
 
-        word_file = os.path.join(
-            folder,
-            "words.txt"
-        )
+        for words in vw_dic.values():
 
-        with open(word_file, encoding="utf-8") as f:
+            for word, *_ in words:
 
-            for line in f:
-
-                word = line.strip()
-
-                if not word:
+                if word in checked:
                     continue
 
-                if word.startswith("#"):
-                    continue
+                checked.add(word)
 
-                reading = kanafy(word)
+                reading = knf(word)
 
                 remain = "".join(
                     kanji_re.findall(reading)
@@ -2327,9 +2316,9 @@ with st.expander("未読漢字チェック"):
 
         if problems:
 
-            text = "\n".join(
-                f"{w} → {r} [{k}]"
-                for w, r, k in problems
+            st.code(
+                "\n".join(
+                    f"{w} → {r} [{k}]"
+                    for w, r, k in problems
+                )
             )
-
-            st.code(text)
