@@ -2322,3 +2322,49 @@ with st.expander("未読漢字チェック"):
                     for w, r, k in problems
                 )
             )
+            
+    if problems:
+
+        text = "\n".join(
+            f"{w} → {r} [{k}]"
+            for w, r, k in problems
+        )
+
+        st.code(text)
+
+        problem_words = {
+            w for w, _, _ in problems
+        }
+
+        with open(word_file, encoding="utf-8") as f:
+            original_lines = f.readlines()
+
+        filtered_lines = []
+
+        for line in original_lines:
+
+            word = line.strip()
+
+            if (
+                word
+                and not word.startswith("#")
+                and word in problem_words
+            ):
+                continue
+
+            filtered_lines.append(line)
+
+        filtered_text = "".join(filtered_lines)
+
+        st.text_area(
+            "未読漢字除外版 words.txt",
+            filtered_text,
+            height=400
+        )
+
+        st.download_button(
+            "除外版をダウンロード",
+            filtered_text,
+            file_name="words_filtered.txt",
+            mime="text/plain"
+        )
