@@ -2285,33 +2285,34 @@ with st.expander("未読漢字チェック"):
 
         problems = []
 
-        # 辞書内の全単語を取得
-        all_words = set()
+        # words.txt を直接読む
+        with open(word_file, encoding="utf-8") as f:
 
-        for words in vowel_dict.values():
+            for line in f:
 
-            for word, _ in words:
+                word = line.strip()
 
-                all_words.add(word)
+                if not word:
+                    continue
 
-        # チェック
-        for word in sorted(all_words):
+                if word.startswith("#"):
+                    continue
 
-            reading = kanafy(word)
+                reading = kanafy(word)
 
-            remain = "".join(
-                kanji_re.findall(reading)
-            )
-
-            if remain:
-
-                problems.append(
-                    (
-                        word,
-                        reading,
-                        remain
-                    )
+                remain = "".join(
+                    kanji_re.findall(reading)
                 )
+
+                if remain:
+
+                    problems.append(
+                        (
+                            word,
+                            reading,
+                            remain
+                        )
+                    )
 
         st.write(f"件数: {len(problems)}")
 
@@ -2323,9 +2324,3 @@ with st.expander("未読漢字チェック"):
             )
 
             st.code(text)
-
-        else:
-
-            st.success(
-                "読みの中に漢字が残る単語は見つかりませんでした"
-            )
