@@ -2334,7 +2334,7 @@ with st.expander("未読漢字チェック"):
             w for w, _, _ in problems
         }
 
-        with open(word_file, encoding="utf-8") as f:
+        with open(wd_fl, encoding="utf-8") as f:
             original_lines = f.readlines()
 
         filtered_lines = []
