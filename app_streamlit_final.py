@@ -2366,3 +2366,127 @@ with st.expander("未読漢字チェック"):
             file_name="words_filtered.txt",
             mime="text/plain"
         )
+
+with st.expander("同一かなチェック"):
+
+    if st.button("チェック開始", key="same_kana_check"):
+
+        from collections import defaultdict
+
+        # ------------------
+        # 同一かなグループ作成
+        # ------------------
+
+        kana_groups = defaultdict(list)
+
+        checked = set()
+
+        for words in vw_dic.values():
+
+            for word, *_ in words:
+
+                if word in checked:
+                    continue
+
+                checked.add(word)
+
+                kana = knf(word)
+
+                kana_groups[kana].append(word)
+
+        # 2語以上だけ残す
+        kana_groups = {
+            k: v
+            for k, v in kana_groups.items()
+            if len(v) >= 2
+        }
+
+        st.session_state.same_kana_groups = kana_groups
+
+    kana_groups = st.session_state.get(
+        "same_kana_groups",
+        {}
+    )
+
+    if kana_groups:
+
+        st.write(
+            f"同一かなグループ数: {len(kana_groups)}"
+        )
+
+        selected_words = set()
+
+        for idx, (kana, words) in enumerate(
+            sorted(
+                kana_groups.items(),
+                key=lambda x: len(x[1]),
+                reverse=True
+            )
+        ):
+
+            st.markdown(
+                f"### {kana} （{len(words)}語）"
+            )
+
+            selected = st.radio(
+                "残す単語",
+                words,
+                key=f"samekana_{idx}",
+                label_visibility="collapsed"
+            )
+
+            selected_words.add(selected)
+
+        # ------------------
+        # words.txt生成
+        # ------------------
+
+        all_words = []
+
+        seen = set()
+
+        for words in vw_dic.values():
+
+            for word, *_ in words:
+
+                if word in seen:
+                    continue
+
+                seen.add(word)
+
+                all_words.append(word)
+
+        duplicate_words = set()
+
+        for words in kana_groups.values():
+
+            duplicate_words.update(words)
+
+        filtered_words = []
+
+        for word in all_words:
+
+            if word in duplicate_words:
+
+                if word in selected_words:
+                    filtered_words.append(word)
+
+            else:
+                filtered_words.append(word)
+
+        filtered_text = "\n".join(
+            filtered_words
+        )
+
+        st.text_area(
+            "同一かな除外版 words.txt",
+            filtered_text,
+            height=400
+        )
+
+        st.download_button(
+            "除外版をダウンロード",
+            filtered_text,
+            file_name="words_samekana_filtered.txt",
+            mime="text/plain"
+        )
