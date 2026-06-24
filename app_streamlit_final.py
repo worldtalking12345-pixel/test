@@ -2443,16 +2443,17 @@ with st.expander("同一かなチェック"):
 
         all_words = []
 
-        seen = set()
+        with open(words_path, encoding="utf-8") as f:
 
-        for words in vw_dic.values():
+            for line in f:
 
-            for word, *_ in words:
+                word = line.strip()
 
-                if word in seen:
+                if not word:
                     continue
 
-                seen.add(word)
+                if word.startswith("#"):
+                    continue
 
                 all_words.append(word)
 
