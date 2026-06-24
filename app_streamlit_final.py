@@ -2443,7 +2443,7 @@ with st.expander("同一かなチェック"):
 
         all_words = []
 
-        with open(words_path, encoding="utf-8") as f:
+        with open(words_file, encoding="utf-8") as f:
 
             for line in f:
 
