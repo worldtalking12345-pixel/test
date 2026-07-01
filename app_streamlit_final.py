@@ -2256,13 +2256,13 @@ for words in vw_dic.values():
             length_counts["7以上"] += 1
 
 st.caption(
-    f"登録単語数: {ct:,} "
+    f"登録単語数: {ct:,} 　"
     f"(母音の長さ "
-    f"3以下: {length_counts['3以下']:,} "
-    f"4: {length_counts['4']:,} "
-    f"5: {length_counts['5']:,} "
-    f"6: {length_counts['6']:,} "
-    f"7以上: {length_counts['7以上']:,})"
+    f"3字以下: {length_counts['3以下']:,}　 "
+    f"4字: {length_counts['4']:,}　 "
+    f"5字: {length_counts['5']:,}　 "
+    f"6字: {length_counts['6']:,}　 "
+    f"7字以上: {length_counts['7以上']:,})"
 )
 
 qu = st.text_input("検索語")
