@@ -2442,7 +2442,7 @@ with st.expander("同一かなチェック"):
             f"同一かなグループ数: {len(kana_groups)}"
         )
 
-        selected_words = set()
+        selected_map = {}
 
         for idx, (kana, words) in enumerate(
             sorted(
@@ -2480,8 +2480,7 @@ with st.expander("同一かなチェック"):
                 label_visibility="collapsed"
             )
 
-            if selected != "（どれも除去しない）":
-                selected_words.add(selected)
+            selected_map[kana] = selected
 
         # ------------------
         # words.txt生成
@@ -2503,25 +2502,30 @@ with st.expander("同一かなチェック"):
 
                 all_words.append(word)
 
-        duplicate_words = set()
+        # 単語 → グループかな
+        word_to_kana = {}
 
-        for words in kana_groups.values():
-
-            duplicate_words.update(words)
+        for kana, words in kana_groups.items():
+            for word in words:
+                word_to_kana[word] = kana
 
         filtered_words = []
 
         for word in all_words:
 
-            if word in duplicate_words:
+            if word not in word_to_kana:
+                filtered_words.append(word)
+                continue
 
-                if group_selected_is_none:
-                    filtered_words.append(word)
+            kana = word_to_kana[word]
+            selected = selected_map[kana]
 
-                elif word == selected:
-                    filtered_words.append(word)
+            # 「どれも除去しない」
+            if selected == "（どれも除去しない）":
+                filtered_words.append(word)
 
-            else:
+            # 選ばれた単語だけ残す
+            elif word == selected:
                 filtered_words.append(word)
 
         filtered_text = "\n".join(
