@@ -2369,20 +2369,6 @@ with st.expander("未読漢字チェック"):
 
 with st.expander("同一かなチェック"):
 
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        if st.button("全て除去しない"):
-            st.session_state.samekana_default = "none"
-
-    with col2:
-        if st.button("全て一番上を選択"):
-            st.session_state.samekana_default = "first"
-
-    with col3:
-        if st.button("全て一番下を選択"):
-            st.session_state.samekana_default = "last"
-
     if st.button("チェック開始", key="same_kana_check"):
 
         from collections import defaultdict
@@ -2438,6 +2424,52 @@ with st.expander("同一かなチェック"):
 
     if kana_groups:
 
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            if st.button("全て除去しない"):
+
+                for idx, (_, words) in enumerate(
+                    sorted(
+                        kana_groups.items(),
+                        key=lambda x: len(x[1]),
+                        reverse=True
+                    )
+                ):
+                    st.session_state[f"samekana_{idx}"] = "（どれも除去しない）"
+
+                st.rerun()
+
+        with col2:
+            if st.button("全て一番上を選択"):
+
+                for idx, (_, words) in enumerate(
+                    sorted(
+                        kana_groups.items(),
+                        key=lambda x: len(x[1]),
+                        reverse=True
+                    )
+                ):
+                    if words:
+                        st.session_state[f"samekana_{idx}"] = words[0]
+
+                st.rerun()
+
+        with col3:
+            if st.button("全て一番下を選択"):
+
+                for idx, (_, words) in enumerate(
+                    sorted(
+                        kana_groups.items(),
+                        key=lambda x: len(x[1]),
+                        reverse=True
+                    )
+                ):
+                    if words:
+                        st.session_state[f"samekana_{idx}"] = words[-1]
+
+                st.rerun()
+
         st.write(
             f"同一かなグループ数: {len(kana_groups)}"
         )
@@ -2458,24 +2490,9 @@ with st.expander("同一かなチェック"):
 
             options = ["（どれも除去しない）"] + words
 
-            default = st.session_state.get("samekana_default")
-
-            if default == "none":
-                default_index = 0
-
-            elif default == "first":
-                default_index = 1 if len(options) >= 2 else 0
-
-            elif default == "last":
-                default_index = len(options) - 1
-
-            else:
-                default_index = 0
-
             selected = st.radio(
                 "残す単語",
                 options,
-                index=default_index,
                 key=f"samekana_{idx}",
                 label_visibility="collapsed"
             )
