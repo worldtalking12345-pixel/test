@@ -2369,23 +2369,23 @@ with st.expander("未読漢字チェック"):
 
 with st.expander("同一かなチェック"):
 
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        if st.button("全て除去しない"):
+            st.session_state.samekana_default = "none"
+
+    with col2:
+        if st.button("全て一番上を選択"):
+            st.session_state.samekana_default = "first"
+
+    with col3:
+        if st.button("全て一番下を選択"):
+            st.session_state.samekana_default = "last"
+
     if st.button("チェック開始", key="same_kana_check"):
 
         from collections import defaultdict
-
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-            if st.button("全て除去しない"):
-                st.session_state.samekana_default = "none"
-
-        with col2:
-            if st.button("全て一番上を選択"):
-                st.session_state.samekana_default = "first"
-
-        with col3:
-            if st.button("全て一番下を選択"):
-                st.session_state.samekana_default = "last"
 
         # ------------------
         # 同一かなグループ作成
