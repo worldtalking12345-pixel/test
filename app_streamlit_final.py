@@ -2192,30 +2192,6 @@ vw_dic, ct = ld_dic(
     us12
 )
 
-length_count = {
-    "3以下": 0,
-    "4": 0,
-    "5": 0,
-    "6": 0,
-    "7以上": 0
-}
-
-for key, words in vw_dic.items():
-
-    l = len(key)
-    c = len(words)
-
-    if l <= 3:
-        length_count["3以下"] += c
-    elif l == 4:
-        length_count["4"] += c
-    elif l == 5:
-        length_count["5"] += c
-    elif l == 6:
-        length_count["6"] += c
-    else:
-        length_count["7以上"] += c
-
 # 母音長ごとの登録単語数を集計
 length_counts = {
     "3以下": 0,
@@ -2352,9 +2328,6 @@ with st.expander("未読漢字チェック"):
     if "kanji_check_finished" not in st.session_state:
         st.session_state.kanji_check_finished = False
 
-    if "kanji_check_result" not in st.session_state:
-        st.session_state.kanji_check_result = []
-
     if "kanji_problems" not in st.session_state:
         st.session_state.kanji_problems = []
 
@@ -2419,15 +2392,10 @@ with st.expander("未読漢字チェック"):
 
     problems = st.session_state.kanji_problems
 
-    if st.session_state.kanji_check_running:
-        st.info("チェック中...")
-
-    elif st.session_state.kanji_check_finished:
+    if st.session_state.kanji_check_finished:
         st.success("チェック終了")
 
     if st.session_state.kanji_check_finished:
-
-        problems = st.session_state.kanji_check_result
 
         st.write(f"件数: {len(problems)}")
 
@@ -2559,10 +2527,7 @@ with st.expander("同一かなチェック"):
         {}
     )
 
-    if st.session_state.samekana_check_running:
-        st.info("チェック中...")
-
-    elif st.session_state.samekana_check_finished:
+    if st.session_state.samekana_check_finished:
         st.success("チェック終了")
 
     if st.session_state.samekana_check_finished:
