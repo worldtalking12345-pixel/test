@@ -876,7 +876,7 @@ def bud_dic(rl, us12):
     for key in new_dict:
         new_dict[key].sort(key=lambda x: x[1])
 
-    return new_dict, new_ct
+    return new_dict, new_ct, length_counts
 
 
 
@@ -2215,6 +2215,45 @@ for key, words in vw_dic.items():
         length_count["6"] += c
     else:
         length_count["7以上"] += c
+
+# 母音長ごとの登録単語数を集計
+length_counts = {
+    "3以下": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7以上": 0,
+}
+
+counted = set()
+
+for words in vw_dic.values():
+
+    for word, *_ in words:
+
+        if word in counted:
+            continue
+
+        counted.add(word)
+
+        key = ext(
+            word,
+            rl,
+            us12
+        )
+
+        l = len(key)
+
+        if l <= 3:
+            length_counts["3以下"] += 1
+        elif l == 4:
+            length_counts["4"] += 1
+        elif l == 5:
+            length_counts["5"] += 1
+        elif l == 6:
+            length_counts["6"] += 1
+        else:
+            length_counts["7以上"] += 1
 
 st.caption(
     f"登録単語数: {ct:,} "
