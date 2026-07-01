@@ -2373,6 +2373,20 @@ with st.expander("同一かなチェック"):
 
         from collections import defaultdict
 
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            if st.button("全て除去しない"):
+                st.session_state.samekana_default = "none"
+
+        with col2:
+            if st.button("全て一番上を選択"):
+                st.session_state.samekana_default = "first"
+
+        with col3:
+            if st.button("全て一番下を選択"):
+                st.session_state.samekana_default = "last"
+
         # ------------------
         # 同一かなグループ作成
         # ------------------
@@ -2390,8 +2404,22 @@ with st.expander("同一かなチェック"):
 
                 checked.add(word)
 
-                kana = knf(word)
+                import re
 
+                def normalize_same_kana(word):
+
+                    kana = knf(word)
+
+                    # カタカナ・アルファベット以外を除去
+                    kana = re.sub(
+                        r"[^ァ-ヶA-Za-zａ-ｚＡ-Ｚ]",
+                        "",
+                        kana
+                    )
+
+                    return kana
+
+                kana = normalize_same_kana(word)
                 kana_groups[kana].append(word)
 
         # 2語以上だけ残す
@@ -2428,14 +2456,32 @@ with st.expander("同一かなチェック"):
                 f"### {kana} （{len(words)}語）"
             )
 
+            options = ["（どれも除去しない）"] + words
+
+            default = st.session_state.get("samekana_default")
+
+            if default == "none":
+                default_index = 0
+
+            elif default == "first":
+                default_index = 1 if len(options) >= 2 else 0
+
+            elif default == "last":
+                default_index = len(options) - 1
+
+            else:
+                default_index = 0
+
             selected = st.radio(
                 "残す単語",
-                words,
+                options,
+                index=default_index,
                 key=f"samekana_{idx}",
                 label_visibility="collapsed"
             )
 
-            selected_words.add(selected)
+            if selected != "（どれも除去しない）":
+                selected_words.add(selected)
 
         # ------------------
         # words.txt生成
@@ -2469,7 +2515,10 @@ with st.expander("同一かなチェック"):
 
             if word in duplicate_words:
 
-                if word in selected_words:
+                if group_selected_is_none:
+                    filtered_words.append(word)
+
+                elif word == selected:
                     filtered_words.append(word)
 
             else:
