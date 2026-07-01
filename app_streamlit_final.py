@@ -876,7 +876,7 @@ def bud_dic(rl, us12):
     for key in new_dict:
         new_dict[key].sort(key=lambda x: x[1])
 
-    return new_dict, new_ct, length_counts
+    return new_dict, new_ct
 
 
 
