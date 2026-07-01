@@ -2192,7 +2192,39 @@ vw_dic, ct = ld_dic(
     us12
 )
 
-st.caption(f"登録単語数: {ct:,}")
+length_count = {
+    "3以下": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7以上": 0
+}
+
+for key, words in vw_dic.items():
+
+    l = len(key)
+    c = len(words)
+
+    if l <= 3:
+        length_count["3以下"] += c
+    elif l == 4:
+        length_count["4"] += c
+    elif l == 5:
+        length_count["5"] += c
+    elif l == 6:
+        length_count["6"] += c
+    else:
+        length_count["7以上"] += c
+
+st.caption(
+    f"登録単語数: {ct:,} "
+    f"(母音の長さ "
+    f"3以下: {length_counts['3以下']:,} "
+    f"4: {length_counts['4']:,} "
+    f"5: {length_counts['5']:,} "
+    f"6: {length_counts['6']:,} "
+    f"7以上: {length_counts['7以上']:,})"
+)
 
 qu = st.text_input("検索語")
 
@@ -2275,10 +2307,22 @@ render_memory_game_section()
 
 with st.expander("未読漢字チェック"):
 
+    if "kanji_check_running" not in st.session_state:
+        st.session_state.kanji_check_running = False
+
+    if "kanji_check_finished" not in st.session_state:
+        st.session_state.kanji_check_finished = False
+
+    if "kanji_check_result" not in st.session_state:
+        st.session_state.kanji_check_result = []
+
     if "kanji_problems" not in st.session_state:
         st.session_state.kanji_problems = []
 
     if st.button("チェック開始"):
+
+        st.session_state.kanji_check_running = True
+        st.session_state.kanji_check_finished = False
 
         import re
 
@@ -2317,11 +2361,26 @@ with st.expander("未読漢字チェック"):
 
         st.session_state.kanji_problems = problems
 
+        st.session_state.kanji_check_running = False
+        st.session_state.kanji_check_finished = True
+
+        st.rerun()
+
     problems = st.session_state.kanji_problems
+
+    if st.session_state.kanji_check_running:
+        st.info("チェック中...")
+
+    elif st.session_state.kanji_check_finished:
+        st.success("チェック終了")
 
     st.write(f"件数: {len(problems)}")
 
-    if problems:
+    if st.session_state.kanji_check_finished:
+
+        problems = st.session_state.kanji_check_result
+
+        st.write(f"件数: {len(problems)}")
 
         text = "\n".join(
             f"{w} → {r} [{k}]"
@@ -2369,7 +2428,19 @@ with st.expander("未読漢字チェック"):
 
 with st.expander("同一かなチェック"):
 
+    if "samekana_check_running" not in st.session_state:
+        st.session_state.samekana_check_running = False
+
+    if "samekana_check_finished" not in st.session_state:
+        st.session_state.samekana_check_finished = False
+
+    if "same_kana_groups" not in st.session_state:
+        st.session_state.same_kana_groups = {}
+
     if st.button("チェック開始", key="same_kana_check"):
+
+        st.session_state.samekana_check_running = True
+        st.session_state.samekana_check_finished = False
 
         from collections import defaultdict
 
@@ -2417,12 +2488,27 @@ with st.expander("同一かなチェック"):
 
         st.session_state.same_kana_groups = kana_groups
 
+        st.session_state.samekana_check_running = False
+        st.session_state.samekana_check_finished = True
+
+        st.rerun()
+
     kana_groups = st.session_state.get(
         "same_kana_groups",
         {}
     )
 
-    if kana_groups:
+    if st.session_state.samekana_check_running:
+        st.info("チェック中...")
+
+    elif st.session_state.samekana_check_finished:
+        st.success("チェック終了")
+
+    if st.session_state.samekana_check_finished:
+
+        kana_groups = st.session_state.same_kana_groups
+
+        st.write(f"同一かなグループ数: {len(kana_groups)}")
 
         col1, col2, col3 = st.columns(3)
 
