@@ -2363,42 +2363,54 @@ with st.expander("未読漢字チェック"):
         st.session_state.kanji_check_running = True
         st.session_state.kanji_check_finished = False
 
-        import re
+        st.rerun()
 
-        kanji_re = re.compile(
-            r'[\u3400-\u4DBF\u4E00-\u9FFF]'
-        )
+        if st.session_state.kanji_check_running:
 
-        problems = []
+            st.info("チェック中...")
 
-        checked = set()
+        if (
+            st.session_state.kanji_check_running
+            and
+            not st.session_state.kanji_check_finished
+        ):
 
-        for words in vw_dic.values():
+            import re
 
-            for word, *_ in words:
+            kanji_re = re.compile(
+                r'[\u3400-\u4DBF\u4E00-\u9FFF]'
+            )
 
-                if word in checked:
-                    continue
+            problems = []
 
-                checked.add(word)
+            checked = set()
 
-                reading = knf(word)
+            for words in vw_dic.values():
 
-                remain = "".join(
-                    kanji_re.findall(reading)
-                )
+                for word, *_ in words:
 
-                if remain:
+                   if word in checked:
+                        continue
 
-                    problems.append(
-                        (
-                            word,
-                            reading,
-                            remain
-                        )
+                    checked.add(word)
+
+                    reading = knf(word)
+
+                    remain = "".join(
+                        kanji_re.findall(reading)
                     )
 
-        st.session_state.kanji_problems = problems
+                    if remain:
+
+                        problems.append(
+                            (
+                                word,
+                                reading,
+                                remain
+                            )
+                        )
+
+            st.session_state.kanji_problems = problems
 
         st.session_state.kanji_check_running = False
         st.session_state.kanji_check_finished = True
@@ -2412,8 +2424,6 @@ with st.expander("未読漢字チェック"):
 
     elif st.session_state.kanji_check_finished:
         st.success("チェック終了")
-
-    st.write(f"件数: {len(problems)}")
 
     if st.session_state.kanji_check_finished:
 
@@ -2481,51 +2491,63 @@ with st.expander("同一かなチェック"):
         st.session_state.samekana_check_running = True
         st.session_state.samekana_check_finished = False
 
-        from collections import defaultdict
+        st.rerun()
 
-        # ------------------
-        # 同一かなグループ作成
-        # ------------------
+        if st.session_state.samekana_check_running:
 
-        kana_groups = defaultdict(list)
+            st.info("チェック中...")
 
-        checked = set()
+        if (
+            st.session_state.samekana_check_running
+            and
+            not st.session_state.samekana_check_finished
+        ):
 
-        for words in vw_dic.values():
+            from collections import defaultdict
 
-            for word, *_ in words:
+            # ------------------
+            # 同一かなグループ作成
+            # ------------------
 
-                if word in checked:
-                    continue
+            kana_groups = defaultdict(list)
 
-                checked.add(word)
+            checked = set()
 
-                import re
+            for words in vw_dic.values():
 
-                def normalize_same_kana(word):
+                for word, *_ in words:
 
-                    kana = knf(word)
+                    if word in checked:
+                        continue
 
-                    # カタカナ・アルファベット以外を除去
-                    kana = re.sub(
-                        r"[^ァ-ヶA-Za-zａ-ｚＡ-Ｚ]",
-                        "",
-                        kana
-                    )
+                    checked.add(word)
 
-                    return kana
+                    import re
 
-                kana = normalize_same_kana(word)
-                kana_groups[kana].append(word)
+                    def normalize_same_kana(word):
 
-        # 2語以上だけ残す
-        kana_groups = {
-            k: v
-            for k, v in kana_groups.items()
-            if len(v) >= 2
-        }
+                        kana = knf(word)
 
-        st.session_state.same_kana_groups = kana_groups
+                       # カタカナ・アルファベット以外を除去
+                        kana = re.sub(
+                            r"[^ァ-ヶA-Za-zａ-ｚＡ-Ｚ]",
+                            "",
+                            kana
+                        )
+
+                        return kana
+
+                    kana = normalize_same_kana(word)
+                    kana_groups[kana].append(word)
+
+            # 2語以上だけ残す
+            kana_groups = {
+                k: v
+                for k, v in kana_groups.items()
+                if len(v) >= 2
+            }
+
+            st.session_state.same_kana_groups = kana_groups
 
         st.session_state.samekana_check_running = False
         st.session_state.samekana_check_finished = True
@@ -2594,10 +2616,6 @@ with st.expander("同一かなチェック"):
                         st.session_state[f"samekana_{idx}"] = words[-1]
 
                 st.rerun()
-
-        st.write(
-            f"同一かなグループ数: {len(kana_groups)}"
-        )
 
         selected_map = {}
 
