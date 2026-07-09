@@ -613,12 +613,6 @@ def ext_vw_rule_f_red(red, rl=2, us12=True):
         vowels, stop = cmp_dup_vw(vowels)
         return "".join(vowels)
 
-    if rl == 1:
-        seq = othello_non_vowels_between_same_vowels(seq)
-        vowels = rem_no_vw(seq)
-        vowels, stop = cmp_dup_vw_old_barikata(vowels)
-        return "".join(vowels)
-
     seq, stop = rem_dup(seq)
     if stop:
         return "".join(rem_no_vw(seq))
@@ -663,10 +657,9 @@ def ext_vw_pre_rep_f_red(red, rl=2):
         return "".join(vowels)
 
     if rl == 1:
-        seq = othello_non_vowels_between_same_vowels(seq)
-        vowels = rem_no_vw(seq)
-        vowels, stop = cmp_dup_vw_old_barikata(vowels)
-        return "".join(vowels)
+        # かためでは、母音検索側も表示される検索キーと内部キーを一致させる。
+        # 例：あうあいあいあ → あうあいあ
+        return ext_vw_rule_f_red(red, 1, True)
 
     seq, stop = rem_dup(seq)
     if stop:
@@ -732,12 +725,6 @@ def ext_f_red(
         seq, stop = cmp_dup_vw(seq)
 
         return "".join(seq)
-
-    if rl == 1:
-
-        # かためは「旧ばりかた」ベース。
-        # 同じ母音に挟まれた母音以外は、その母音に変える。
-        return ext_old_barikata_f_red(red)
 
     word = st0(red, remove_sokuon=True)
 
@@ -2237,22 +2224,8 @@ if qu:
 
     if res:
 
-        use_grouped_view = (
-            rl >= 2
-            and has_same_hard_group(res)
-        )
-
-        if use_grouped_view:
-            render_grouped_result(res)
-        else:
-            res_tx = "\n".join(
-                item[0] for item in res
-            )
-
-            st.code(
-                res_tx,
-                language=None
-            )
+        # 検索タグが複数ある場合も、ない場合も、同じUIで表示する。
+        render_grouped_result(res)
 
     else:
         st.info("一致する単語はありません。")
