@@ -3,6 +3,7 @@ import re
 import html
 import json
 import random
+import unicodedata
 
 from fugashi import Tagger
 from kanjize import number2kanji
@@ -11,6 +12,8 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 st.set_page_config(page_title="母音検索システム", layout="wide")
+
+# 更新: あ段+い保持 / フラッシュカード自由文字数＋以上指定 / ばりかた探し追加＋以上指定
 
 
 def render_flying_words_background():
@@ -229,6 +232,149 @@ def st1(word):
 
 
 # ===========================
+# 音節分けルール
+# ④：え段+い / お段+う / う段+う を長音化
+# ※ あ段+い の「い」は消さず、そのまま残す。
+# rl = 4
+# ===========================
+
+def syllable_st4(word):
+    """
+    音節分け④：
+    ・あ段+い は変換せず、「い」をそのまま残す。
+    ・え段+い → 長音「ー」。
+    ・お段+う / う段+う → 長音「ー」。
+    """
+
+    chars = list(word)
+
+    for i in range(1, len(chars)):
+        ch = chars[i]
+
+        if ch not in ("い", "イ", "う", "ウ"):
+            continue
+
+        prev = chars[i - 1]
+
+        if prev in sm_mp:
+            prev_vowel = sm_mp[prev]
+        else:
+            prev_vowel = vw_mp.get(prev)
+
+        if ch in ("い", "イ"):
+            # あ段+い は変換しない。え段+い だけ長音化する。
+            if prev_vowel == "え":
+                chars[i] = "ー"
+
+        elif ch in ("う", "ウ") and prev_vowel in ("お", "う"):
+            chars[i] = "ー"
+
+    return "".join(chars)
+
+
+def syllable_st5(word):
+    """音節分け⑤：母音列化。母音を持たない発音は「ー」にする。"""
+
+    result = []
+    i = 0
+
+    while i < len(word):
+
+        # 拗音・小書き母音は、前の文字と合わせて1音節として扱う。
+        if i + 1 < len(word) and word[i + 1] in sm_mp:
+            result.append(sm_mp[word[i + 1]])
+            i += 2
+            continue
+
+        vowel = vw_mp.get(word[i])
+
+        if vowel in ("あ", "い", "う", "え", "お"):
+            result.append(vowel)
+        else:
+            # 長音、促音、撥音、記号など母音を持たない発音は「ー」。
+            result.append("ー")
+
+        i += 1
+
+    return result
+
+
+def syllable_st7(seq):
+    """音節分け⑦：連続する「う」の2,4,6...文字目を「ー」にし、末尾の「ー」を削除する。"""
+
+    seq = list(seq)
+    i = 0
+
+    while i < len(seq):
+
+        if seq[i] != "う":
+            i += 1
+            continue
+
+        j = i + 1
+        while j < len(seq) and seq[j] == "う":
+            j += 1
+
+        # うう→うー、ううう→うーう、うううう→うーうー ...
+        for k in range(i + 1, j, 2):
+            seq[k] = "ー"
+
+        i = j
+
+    # 「ありがとう → あいあおー」のように末尾が長音なら削除する。
+    while seq and seq[-1] == "ー":
+        seq.pop()
+
+    return seq
+
+
+def syllable_st8(seq):
+    """音節分け⑧：途中の「う」を長音化し、連続する「ー」を1個にまとめる。"""
+
+    src = list(seq)
+    out = list(seq)
+    n = len(src)
+
+    for i, ch in enumerate(src):
+
+        if ch != "う":
+            continue
+
+        # 最初・最後・最後から2番目の「う」は残す。
+        if i == 0 or i == n - 1 or i == n - 2:
+            continue
+
+        # 「ー」の直前・直後にある「う」は残す。
+        prev_ch = src[i - 1] if i > 0 else None
+        next_ch = src[i + 1] if i + 1 < n else None
+
+        if prev_ch == "ー" or next_ch == "ー":
+            continue
+
+        out[i] = "ー"
+
+    # ーー、ーーー... は1個の「ー」にまとめる。
+    result = []
+    for ch in out:
+        if ch == "ー" and result and result[-1] == "ー":
+            continue
+        result.append(ch)
+
+    return result
+
+
+def ext_syllable_f_red(red):
+    """音節分け①〜⑧を適用した最終検索キーを返す。①〜③は prp_wd() で処理済み。"""
+
+    word = syllable_st4(red)
+    seq = syllable_st5(word)
+    seq = syllable_st7(seq)
+    seq = syllable_st8(seq)
+
+    return "".join(seq)
+
+
+# ===========================
 # Step3
 # ふつう：途中の「う」を消す
 # やわめ：途中の「う」「い」を消す
@@ -327,10 +473,34 @@ def cmp_p_rep(vowels):
 # 母音抽出（新仕様）
 # ===========================
 
+def remove_unread_chars(text):
+    """発音しない区切り記号・空白を検索処理から除外する。長音記号「ー」は残す。"""
+
+    result = []
+
+    for ch in text:
+        if ch == "ー":
+            result.append(ch)
+            continue
+
+        category = unicodedata.category(ch)
+
+        # P*: 句読点・中黒・括弧・ハイフン等
+        # Z*: 半角/全角スペース等
+        # これらは発音しないものとして完全に無視する。
+        if category.startswith("P") or category.startswith("Z"):
+            continue
+
+        result.append(ch)
+
+    return "".join(result)
+
+
 def prp_wd(word):
 
     word = replace_alp(word)
     red = knf(word)
+    red = remove_unread_chars(red)
 
     return red
 
@@ -507,6 +677,9 @@ def ext_old_katame_group_f_red(red, us12=True):
 
 def ext_group_key_f_red(red, rl=2):
 
+    if rl == 4:
+        return ext_syllable_f_red(red)
+
     # 分類タグ・長い形での検索用キー。
     # 最終的に検索辞書へ登録するキーとは分ける。
     #
@@ -544,6 +717,9 @@ def ext_group_key_f_red(red, rl=2):
 
 
 def ext_pre_rep_f_red(red, rl=2):
+
+    if rl == 4:
+        return ext_syllable_f_red(red)
 
     # 検索フィルタ用キー。
     # 最終キーの直前、つまり「羅列削除」だけを行う前の状態を返す。
@@ -603,6 +779,9 @@ def ext_pre_rep(word, rl=2):
 
 def ext_vw_rule_f_red(red, rl=2, us12=True):
 
+    if rl == 4:
+        return ext_syllable_f_red(red)
+
     # 母音検索用：お段+う、え段+いの短縮（st0）は行わない。
     # それ以外の選択ルールは単語検索側と同じ流れで適用する。
 
@@ -644,6 +823,9 @@ def ext_vw_rule_f_red(red, rl=2, us12=True):
 
 
 def ext_vw_pre_rep_f_red(red, rl=2):
+
+    if rl == 4:
+        return ext_syllable_f_red(red)
 
     # 母音検索用の羅列削除前キー。
     # st0は使わず、お段+う / え段+い は消さない。
@@ -714,6 +896,9 @@ def ext_f_red(
     rl=2,
     us12=True
 ):
+
+    if rl == 4:
+        return ext_syllable_f_red(red)
 
     if rl == 0:
 
@@ -806,7 +991,11 @@ def ext_vw_sch(word):
 
 def ext_keys_f_red(red, rl=2, us12=True):
 
-    # 1語につき必要になる検索キー類をまとめて作る。
+    if rl == 4:
+        key = ext_syllable_f_red(red)
+        return key, key, key
+
+    # 1語につき必要になる検索キー類をまとめて作る.
     # bud_dic()内で ext_f_red / ext_group_key_f_red / ext_pre_rep_f_red を
     # 別々に呼んでいた重複処理を減らすための関数。
 
@@ -1312,16 +1501,6 @@ def render_grouped_result(entries):
 # 母音フラッシュカード用
 # ===========================
 
-def len_match_key(key, len_label):
-
-    if len_label == "4":
-        return len(key) == 4
-    if len_label == "5":
-        return len(key) == 5
-    if len_label == "6":
-        return len(key) == 6
-    return len(key) >= 7
-
 @st.cache_data
 def ld_flash_dic(
     rl,
@@ -1332,21 +1511,28 @@ def ld_flash_dic(
         us12
     )
 
-def get_flash_candidates(vowel_dict, len_label):
+def get_flash_candidates(vowel_dict, target_len, length_mode="ちょうど"):
+    """指定文字数（ちょうど / 以上）に合い、2語以上ある検索キーだけを返す。"""
 
     candidates = []
 
     for key, entries in vowel_dict.items():
 
-        if not len_match_key(key, len_label):
-            continue
+        key_len = len(key)
+
+        if length_mode == "以上":
+            if key_len < target_len:
+                continue
+        else:
+            if key_len != target_len:
+                continue
 
         if len(entries) < 2:
             continue
 
         candidates.append(key)
 
-    candidates.sort()
+    candidates.sort(key=lambda x: (len(x), x))
 
     return candidates
 
@@ -1714,6 +1900,7 @@ def render_flashcard_section():
             "かため": 1,
             "ふつう": 2,
             "やわめ": 3,
+            "音節分け": 4,
         }
 
         flash_rl_lb = st.radio(
@@ -1738,28 +1925,50 @@ def render_flashcard_section():
             key="flash_output_mode"
         )
 
-        st.markdown("**文字数を指定**")
-        len_label = st.radio(
-            "文字数を指定",
-            ["4", "5", "6", "7以上"],
-            horizontal=True,
-            index=0,
-            key="flash_len",
-            label_visibility="collapsed"
-        )
-
         flash_dic, flash_ct, _, _, _ = ld_flash_dic(
             flash_rl,
             flash_us12
         )
 
+        available_lengths = [
+            len(key)
+            for key, entries in flash_dic.items()
+            if len(entries) >= 2 and key
+        ]
+        max_flash_len = max(available_lengths, default=4)
+        default_flash_len = min(4, max_flash_len)
+
+        st.markdown("**文字数を指定**")
+        length_mode = st.radio(
+            "文字数条件",
+            ["ちょうど", "以上"],
+            horizontal=True,
+            index=0,
+            key="flash_len_mode",
+        )
+        target_len = int(st.number_input(
+            "文字数を指定",
+            min_value=1,
+            max_value=max_flash_len,
+            value=default_flash_len,
+            step=1,
+            key="flash_len_number",
+            label_visibility="collapsed"
+        ))
+
         candidates = get_flash_candidates(
             flash_dic,
-            len_label
+            target_len,
+            length_mode,
         )
 
+        flash_len_label = (
+            f"{target_len}文字以上"
+            if length_mode == "以上"
+            else f"{target_len}文字"
+        )
         st.caption(
-            f"対象母音数: {len(candidates):,} / 登録単語数: {flash_ct:,}"
+            f"条件: {flash_len_label} / 対象母音数: {len(candidates):,} / 登録単語数: {flash_ct:,}"
         )
 
         init_values = {
@@ -1768,7 +1977,8 @@ def render_flashcard_section():
             "flash_card_entries": [],
             "flash_card_answer": False,
             "flash_card_rule": flash_rl_lb,
-            "flash_card_len": len_label,
+            "flash_card_len": target_len,
+            "flash_card_len_mode": length_mode,
             "flash_card_us12": flash_us12,
             "flash_card_output_mode": output_mode,
             "flash_card_display": "",
@@ -1784,7 +1994,8 @@ def render_flashcard_section():
 
         changed_cond = (
             st.session_state.flash_card_rule != flash_rl_lb
-            or st.session_state.flash_card_len != len_label
+            or st.session_state.flash_card_len != target_len
+            or st.session_state.flash_card_len_mode != length_mode
             or st.session_state.flash_card_us12 != flash_us12
             or st.session_state.flash_card_output_mode != output_mode
         )
@@ -1795,7 +2006,8 @@ def render_flashcard_section():
             st.session_state.flash_card_entries = []
             st.session_state.flash_card_answer = False
             st.session_state.flash_card_rule = flash_rl_lb
-            st.session_state.flash_card_len = len_label
+            st.session_state.flash_card_len = target_len
+            st.session_state.flash_card_len_mode = length_mode
             st.session_state.flash_card_us12 = flash_us12
             st.session_state.flash_card_output_mode = output_mode
             st.session_state.flash_card_display = ""
@@ -1882,6 +2094,127 @@ def render_flashcard_section():
 
         with hist_col:
             render_flash_history(st.session_state.flash_card_history)
+
+
+# ===========================
+# ばりかた探し
+# ===========================
+
+@st.cache_data
+def ld_barikata_finder_index(words_mtime):
+    """
+    ばりかた(rl=0)の韻グループを文字数別に一度だけ索引化する。
+    words.txt の更新時刻を引数にすることで、辞書更新時はキャッシュを自動更新する。
+    """
+
+    vowel_dict, word_count, _, _, _ = bud_dic(0, True)
+    groups_by_length = {}
+
+    for key, entries in vowel_dict.items():
+        # 「韻」として並べるため、同じキーに2語以上あるものだけ対象にする。
+        if not key or len(entries) < 2:
+            continue
+
+        words = tuple(item[0] for item in entries)
+        groups_by_length.setdefault(len(key), []).append((key, words))
+
+    for length in groups_by_length:
+        groups_by_length[length].sort(key=lambda x: x[0])
+
+    return groups_by_length, word_count
+
+
+def render_barikata_finder_section():
+
+    st.markdown("---")
+    st.subheader("ばりかた探し")
+
+    with st.container(border=True):
+        st.caption(
+            "指定した文字数の『ばりかた』の韻を一覧表示します。"
+            "動作を軽くするため、初回だけ索引を作り、40グループずつ表示します。"
+        )
+
+        length_mode = st.radio(
+            "ばりかたの文字数条件",
+            ["ちょうど", "以上"],
+            horizontal=True,
+            index=0,
+            key="barikata_finder_len_mode",
+        )
+
+        target_len = int(st.number_input(
+            "ばりかたの文字数",
+            min_value=1,
+            max_value=100,
+            value=4,
+            step=1,
+            key="barikata_finder_len",
+        ))
+
+        if st.button("この条件を表示", key="barikata_finder_show"):
+            st.session_state.barikata_finder_active_len = target_len
+            st.session_state.barikata_finder_active_mode = length_mode
+
+        active_len = st.session_state.get("barikata_finder_active_len")
+        active_mode = st.session_state.get("barikata_finder_active_mode", "ちょうど")
+
+        if active_len is None:
+            st.info("文字数と条件を指定して『この条件を表示』を押してください。")
+            return
+
+        try:
+            words_mtime = os.path.getmtime(wd_fl)
+        except OSError:
+            words_mtime = 0
+
+        groups_by_length, word_count = ld_barikata_finder_index(words_mtime)
+
+        if active_mode == "以上":
+            groups = []
+            for length in sorted(groups_by_length):
+                if length >= active_len:
+                    groups.extend(groups_by_length[length])
+            active_label = f"{active_len}文字以上"
+        else:
+            groups = groups_by_length.get(active_len, [])
+            active_label = f"{active_len}文字"
+
+        st.caption(
+            f"{active_label} / 韻グループ数: {len(groups):,} / 登録単語数: {word_count:,}"
+        )
+
+        if not groups:
+            st.info("この条件には、2語以上ある『ばりかた』の韻がありません。")
+            return
+
+        # 一度に大量のStreamlit部品を作ると重くなるため、文字列1ブロックにまとめてページ分割する。
+        page_size = 40
+        total_pages = (len(groups) + page_size - 1) // page_size
+        page = int(st.number_input(
+            "ページ",
+            min_value=1,
+            max_value=total_pages,
+            value=1,
+            step=1,
+            key=f"barikata_finder_page_{active_mode}_{active_len}",
+        ))
+
+        start = (page - 1) * page_size
+        end = min(start + page_size, len(groups))
+        page_groups = groups[start:end]
+
+        lines = []
+        for key, words in page_groups:
+            lines.append(f"ー{key}ー")
+            lines.extend(words)
+            lines.append("")
+
+        st.code("\n".join(lines), language=None)
+        st.caption(
+            f"{start + 1:,}〜{end:,}グループ目 / 全{len(groups):,}グループ "
+            f"（{page}/{total_pages}ページ）"
+        )
 
 
 # ===========================
@@ -2035,6 +2368,7 @@ def render_memory_game_section():
             "かため": 1,
             "ふつう": 2,
             "やわめ": 3,
+            "音節分け": 4,
         }
 
         mem_rl_lb = st.radio(
@@ -2137,6 +2471,7 @@ rl_nm = {
     "かため": 1,
     "ふつう": 2,
     "やわめ": 3,
+    "音節分け": 4,
 }
 
 rl_lb = st.radio(
@@ -2248,6 +2583,7 @@ with st.expander("変換テスト"):
 
 
 render_flashcard_section()
+render_barikata_finder_section()
 render_memory_game_section()
 
 with st.expander("未読漢字チェック"):
